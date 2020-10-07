@@ -55,6 +55,23 @@ func genIntCh(max int) chan int {
 	return ch
 }
 
+type foo string
+
+func (f foo) Do() string {
+	return string(f) + string(f) + string(f)
+}
+func execute[T interface{ Do() S }, S any](e T) S {
+	return e.Do()
+}
+
+type executer[T any] interface {
+	Do() T
+}
+
+func execute2[T executer[S], S any](e T) S {
+	return e.Do()
+}
+
 func main() {
 	genCh := genIntCh(100)
 	adCh := addCh(genCh, -10)
@@ -64,10 +81,12 @@ func main() {
 	mpCh := mapCh(fCh, func(i int) string {
 		return "[map] " + strconv.Itoa(i)
 	})
-	mpCh2 := mapCh(mpCh, func(s string) string {
-		return s + ":" + strconv.Itoa(len(s))
+	mpCh2 := mapCh(mpCh, func(s string) foo {
+		return foo(s + ":" + strconv.Itoa(len(s)))
 	})
 	for r := range mpCh2 {
-		fmt.Println(r)
+		// S=stringと推論できない例なので、指定している
+		fmt.Println(execute[foo, string](r))
+		fmt.Println(execute2[foo, string](r))
 	}
 }
