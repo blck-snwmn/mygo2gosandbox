@@ -1,0 +1,57 @@
+package main
+
+import (
+	"fmt"
+	"strconv"
+)
+
+func mapCh[T, S any](in chan T, f func(T) S) chan S {
+	ch := make(chan S, 1)
+	go func() {
+		defer close(ch)
+		for i := range in {
+			ch <- f(i)
+		}
+	}()
+	return ch
+}
+
+func filterCh[T any](in chan T, f func(T) bool) chan T {
+	ch := make(chan T, 1)
+	go func() {
+		defer close(ch)
+		for i := range in {
+			if f(i) {
+				ch <- i
+			}
+		}
+	}()
+	return ch
+}
+
+func genIntCh(max int) chan int {
+	ch := make(chan int, 1)
+	go func() {
+		defer close(ch)
+		for i := 0; i < max; i++ {
+			ch <- i
+		}
+	}()
+	return ch
+}
+
+func main() {
+	genCh := genIntCh(100)
+	fCh := filterCh(genCh, func(i int) bool {
+		return i%5 == 0 || i%11 == 0 || i%31 == 0
+	})
+	mpCh := mapCh(fCh, func(i int) string {
+		return "[map] " + strconv.Itoa(i)
+	})
+	mpCh2 := mapCh(mpCh, func(s string) string {
+		return s + ":" + strconv.Itoa(len(s))
+	})
+	for r := range mpCh2 {
+		fmt.Println(r)
+	}
+}

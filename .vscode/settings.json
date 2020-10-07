@@ -1,0 +1,5 @@
+{
+    "go.alternateTools": {
+        "go": "$HOME/go2go/bin/go"
+    }
+}
